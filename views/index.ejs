@@ -1,0 +1,117 @@
+<html>
+	<head>
+		<title>Sharing Location</title>
+		<script src='/socket.io/socket.io.js'></script>
+		<script src='/public/js/jquery.js'></script>
+		<script type="text/javascript"
+		        src="https://maps.googleapis.com/maps/api/js?sensor=true"></script>
+		<script>
+		$(document).ready(function(){
+			function insertData(data){
+				$("#messages").append("<p>" + data + "</p>");
+			}
+			var server = io.connect("http://localhost:8888/<%=channel%>")
+			var map_obj = initialize();
+			counter = 0.0;
+			setInterval(function(){
+				if(navigator.geolocation){
+					navigator.geolocation.getCurrentPosition(function(position){
+						var pos = new google.maps.LatLng(position.coords.latitude + counter,position.coords.longitude);
+						map_obj.move(pos);
+						map_obj.g_map.setCenter(pos);
+						counter = counter + 0;//0.00001;
+						//console.log(counter);
+						server.emit("update_location",{lat:pos.lat(),lng:pos.lng()});
+					},function(){
+						console.log('no geolocation error');
+						//for test
+						var pos = new google.maps.LatLng(35 + counter,134);
+						map_obj.g_map.setCenter(pos);
+						server.emit("update_location",{lat:pos.lat(),lng:pos.lng()});
+					});
+				}
+			},1000);
+			server.on("position_update",function(data){
+				test = 0;
+				var pos = new google.maps.LatLng(data.lat+test,data.lng);
+				map_obj.move_added_marker(pos,data.sub_channel);
+			});
+		});
+		function initialize(){
+			var myOption = {
+				zoom: 16,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+			var map = new google.maps.Map(document.getElementById('map_canvas'),myOption);
+			var marker_image = new google.maps.MarkerImage(
+					'/public/img/bluedot.png',
+					null,
+					null,
+					new google.maps.Point(8,8),
+					new google.maps.Size(17,17)
+				);
+			var marker = new google.maps.Marker({
+						flat: true,
+						icon: marker_image,
+						optimzed: true,
+						map: map,
+						title: 'My Location',
+						visible: true	
+					});
+			return {
+				g_map: map,
+				g_marker: marker,
+				markers: {
+					urls : ['reddot.png','yellowdot.png'],
+					counter : 0,
+					getUrl : function(){
+						this.counter = this.counter + 1;
+						return this.urls[this.counter % this.urls.length]
+					}
+				},
+				move: function(pos){
+					marker.setPosition(pos);
+				},
+				add_marker: function(pos,sub_channel){
+					console.log(this.markers.getUrl());
+					var new_marker_image = new google.maps.MarkerImage(
+						'/public/img/' + this.markers.getUrl(),
+						null,
+						null,
+						new google.maps.Point(8,8),
+						new google.maps.Size(17,17)						
+						)
+					var new_marker = new google.maps.Marker({
+						flat:  true,
+						icon: new_marker_image,
+						optimized: true,
+						map: map,
+						title: 'Another Location',
+						position: pos,
+						visible: true
+					});
+					return new_marker;
+				},
+				move_added_marker: function(pos,sub_channel){
+					if(this.markers[sub_channel] == null){
+						console.log("add");
+						this.markers[sub_channel] = this.add_marker(pos,sub_channel)
+					}
+					console.log("move");
+					this.markers[sub_channel].setPosition(pos);
+				}
+			};
+		}
+		</script>
+	</head>
+	<boby>
+		<div id="map_canvas" style="height: 80%"></div>
+		<p>Messages:</p>
+		<div id='messages'></div>
+		<form id="chat_form">
+			<textarea id="chat_input"></textarea>
+			<input type='submit' value='send'/>
+		</form>
+		<a href="http://localhost:8888/<%=channel%>">http://localhost:8888/<%=channel%></a>
+	</body>
+</html>
