@@ -7,10 +7,8 @@
 		        src="https://maps.googleapis.com/maps/api/js?sensor=true"></script>
 		<script>
 		$(document).ready(function(){
-			function insertData(data){
-				$("#messages").append("<p>" + data + "</p>");
-			}
-			var server = io.connect("http://<%=host%>/<%=channel%>")
+			var server = io.connect("http://<%=host%>/<%=channel%>");
+			server.emit('join',{});
 			var map_obj = initialize();
 			counter = 0.0;
 			setInterval(function(){
@@ -20,12 +18,11 @@
 						map_obj.move(pos);
 						map_obj.g_map.setCenter(pos);
 						counter = counter + 0;//0.00001;
-						//console.log(counter);
 						server.emit("update_location",{lat:pos.lat(),lng:pos.lng()});
 					},function(){
 						console.log('no geolocation error');
 						//for test
-						var pos = new google.maps.LatLng(35,134);
+						var pos = new google.maps.LatLng(35.6764259,139.77630380000005);
 						map_obj.move(pos);
 						map_obj.g_map.setCenter(pos);
 						server.emit("update_location",{lat:pos.lat(),lng:pos.lng()});
@@ -38,6 +35,9 @@
 				var pos = new google.maps.LatLng(data.lat+test,data.lng);
 				map_obj.move_added_marker(pos,data.sub_channel);
 			});
+			server.on("remove_marker",function(data){
+				map_obj.remove_marker(data.sub_channel);
+			})
 		});
 		function initialize(){
 			var myOption = {
@@ -104,12 +104,17 @@
 					}
 					this.markers.list[sub_channel].setPosition(pos);
 				},
+				remove_marker: function(sub_channel){
+					this.markers.list[sub_channel].setMap(null);
+				},
 				fit_bounce: function(){
 					var bounds = new google.maps.LatLngBounds();
 					for(var i=0;i<this.markers.list.length;i++){
-						bounds.extend(this.markers.list[i].getPosition());
+						if(markers.list[i] != null){
+							bounds.extend(this.markers.list[i].getPosition());
+						}
 					}
-					this.g_map.fitBounds (bounds);
+					this.g_map.fitBounds(bounds);
 				}
 			};
 		}
@@ -117,12 +122,6 @@
 	</head>
 	<boby>
 		<div id="map_canvas" style="height: 80%"></div>
-		<!--<p>Messages:</p>
-		<div id='messages'></div>
-		<form id="chat_form">
-			<textarea id="chat_input"></textarea>
-			<input type='submit' value='send'/>
-		</form>-->
 		<a href="http://<%=host%>/<%=channel%>">http://<%=host%>/<%=channel%></a><br />
 		<a href="mailto:?body=http://<%=host%>/<%=channel%>">Share by Email</a>
 	</body>
