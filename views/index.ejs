@@ -10,7 +10,7 @@
 			function insertData(data){
 				$("#messages").append("<p>" + data + "</p>");
 			}
-			var server = io.connect("http://localhost:8888/<%=channel%>")
+			var server = io.connect("http://<%=host%>/<%=channel%>")
 			var map_obj = initialize();
 			counter = 0.0;
 			setInterval(function(){
@@ -25,21 +25,23 @@
 					},function(){
 						console.log('no geolocation error');
 						//for test
-						var pos = new google.maps.LatLng(35 + counter,134);
+						var pos = new google.maps.LatLng(35,134);
+						map_obj.move(pos);
 						map_obj.g_map.setCenter(pos);
 						server.emit("update_location",{lat:pos.lat(),lng:pos.lng()});
 					});
 				}
 			},1000);
 			server.on("position_update",function(data){
-				test = 0;
+				//var test = 0.01;
+				var test = 0
 				var pos = new google.maps.LatLng(data.lat+test,data.lng);
 				map_obj.move_added_marker(pos,data.sub_channel);
 			});
 		});
 		function initialize(){
 			var myOption = {
-				zoom: 16,
+				zoom: 17,
 				mapTypeId: google.maps.MapTypeId.ROADMAP
 			};
 			var map = new google.maps.Map(document.getElementById('map_canvas'),myOption);
@@ -62,6 +64,7 @@
 				g_map: map,
 				g_marker: marker,
 				markers: {
+					list : [marker],
 					urls : ['reddot.png','yellowdot.png'],
 					counter : 0,
 					getUrl : function(){
@@ -73,7 +76,6 @@
 					marker.setPosition(pos);
 				},
 				add_marker: function(pos,sub_channel){
-					console.log(this.markers.getUrl());
 					var new_marker_image = new google.maps.MarkerImage(
 						'/public/img/' + this.markers.getUrl(),
 						null,
@@ -88,17 +90,26 @@
 						map: map,
 						title: 'Another Location',
 						position: pos,
-						visible: true
+						visible: true,
+						animation: google.maps.Animation.DROP
+						
 					});
 					return new_marker;
 				},
 				move_added_marker: function(pos,sub_channel){
-					if(this.markers[sub_channel] == null){
-						console.log("add");
-						this.markers[sub_channel] = this.add_marker(pos,sub_channel)
+					if(this.markers.list[sub_channel] == null){
+						this.markers.list[sub_channel] = this.add_marker(pos,sub_channel)
+						this.fit_bounce();
+						this.markers.list[sub_channel].setVisible(true);
 					}
-					console.log("move");
-					this.markers[sub_channel].setPosition(pos);
+					this.markers.list[sub_channel].setPosition(pos);
+				},
+				fit_bounce: function(){
+					var bounds = new google.maps.LatLngBounds();
+					for(var i=0;i<this.markers.list.length;i++){
+						bounds.extend(this.markers.list[i].getPosition());
+					}
+					this.g_map.fitBounds (bounds);
 				}
 			};
 		}
@@ -106,12 +117,13 @@
 	</head>
 	<boby>
 		<div id="map_canvas" style="height: 80%"></div>
-		<p>Messages:</p>
+		<!--<p>Messages:</p>
 		<div id='messages'></div>
 		<form id="chat_form">
 			<textarea id="chat_input"></textarea>
 			<input type='submit' value='send'/>
-		</form>
-		<a href="http://localhost:8888/<%=channel%>">http://localhost:8888/<%=channel%></a>
+		</form>-->
+		<a href="http://<%=host%>/<%=channel%>">http://<%=host%>/<%=channel%></a><br />
+		<a href="mailto:?body=http://<%=host%>/<%=channel%>">Share by Email</a>
 	</body>
 </html>

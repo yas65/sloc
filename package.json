@@ -1,0 +1,16 @@
+{
+  "name": "sharing_location",
+  "subdomain": "yas65",
+  "scripts": {
+    "start": "app.js"
+  },
+  "version": "0.0.1-4",
+  "engines": {
+    "node": "0.6.x"
+  },
+  "dependencies": {
+    "socket.io": "0.9.x",
+    "express": "2.5.9",
+    "ejs": "0.7.1"
+  }
+}
