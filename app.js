@@ -4,11 +4,12 @@ var io = require('socket.io').listen(app);
 var sha246 = require('./sha-256');
 app.set('view options',{layout:false});
 
-var host = 'yas65.jit.su';
+var host = 'sloc.jit.su';
 //var host = 'localhost:8888';
 
 var sub_channel_counter = {};
 
+//Generate unique url and redirect.
 app.get("/",function(request,response){
 	var channel = sha246.convert((new Date).toString());
 	response.redirect("/" + channel);
