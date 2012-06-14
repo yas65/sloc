@@ -28,7 +28,7 @@
 						server.emit("update_location",{lat:pos.lat(),lng:pos.lng()});
 					});
 				}
-			},1000);
+			},500);
 			server.on("position_update",function(data){
 				//var test = 0.01;
 				console.log('position_update_event:' + data.sub_channel);
