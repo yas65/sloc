@@ -31,8 +31,9 @@
 			},1000);
 			server.on("position_update",function(data){
 				//var test = 0.01;
-				var test = 0
-				var pos = new google.maps.LatLng(data.lat+test,data.lng);
+				console.log('position_update_event:' + data.sub_channel);
+				var test = 0;
+				var pos = new google.maps.LatLng(data.lat,data.lng);
 				map_obj.move_added_marker(pos,data.sub_channel);
 			});
 			server.on("remove_marker",function(data){
@@ -64,7 +65,7 @@
 				g_map: map,
 				g_marker: marker,
 				markers: {
-					list : [marker],
+					list : [],
 					urls : ['reddot.png','yellowdot.png'],
 					counter : 0,
 					getUrl : function(){
@@ -97,6 +98,7 @@
 					return new_marker;
 				},
 				move_added_marker: function(pos,sub_channel){
+					console.log(this.markers.list);
 					if(this.markers.list[sub_channel] == null){
 						this.markers.list[sub_channel] = this.add_marker(pos,sub_channel)
 						this.fit_bounce();
@@ -110,10 +112,11 @@
 				fit_bounce: function(){
 					var bounds = new google.maps.LatLngBounds();
 					for(var i=0;i<this.markers.list.length;i++){
-						if(markers.list[i] != null){
+						if(this.markers.list[i] != null){
 							bounds.extend(this.markers.list[i].getPosition());
 						}
 					}
+					bounds.extend(this.g_marker.getPosition());
 					this.g_map.fitBounds(bounds);
 				}
 			};
